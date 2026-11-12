@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QCM Éclair - 20 Pièges</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f19;
+    --surface: #151b2b;
+    --surface-hover: #1e2638;
+    --border: #2a3449;
+    --text: #f1f5f9;
+    --text-dim: #94a3b8;
+    --primary: #6366f1;
+    --primary-glow: rgba(99, 102, 241, 0.3);
+    --success: #10b981;
+    --success-bg: rgba(16, 185, 129, 0.15);
+    --danger: #ef4444;
+    --danger-bg: rgba(239, 68, 68, 0.15);
+    --radius: 16px;
+    --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--bg);
+    background-image: 
+      radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 25%),
+      radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.05), transparent 25%);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  /* ---- HEADER & PROGRESS ---- */
+  header {
+    text-align: center;
+    margin-bottom: 40px;
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+    background: linear-gradient(to right, #818cf8, #34d399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  p.subtitle {
+    color: var(--text-dim);
+    font-size: 1rem;
+    margin-bottom: 24px;
+  }
+
+  .progress-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 12px 20px;
+    border-radius: 100px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .progress-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--success));
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+
+  .progress-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--success);
+  }
+
+  /* ---- QUESTION CARD ---- */
+  .question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+
+  /* Animations d'état de la carte */
+  .question-card.correct {
+    border-color: var(--success);
+    box-shadow: 0 0 20px var(--success-bg);
+    animation: popCorrect 0.5s ease;
+  }
+
+  .question-card.wrong {
+    border-color: var(--danger);
+    box-shadow: 0 0 20px var(--danger-bg);
+    animation: shakeWrong 0.4s ease;
+  }
+
+  .q-header {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .q-num {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    background: var(--border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-dim);
+  }
+
+  .question-card.correct .q-num { background: var(--success); color: white; }
+  .question-card.wrong .q-num { background: var(--danger); color: white; }
+
+  .q-text {
+    font-weight: 600;
+    font-size: 1.05rem;
+    line-height: 1.5;
+    padding-top: 4px;
+  }
+
+  /* ---- CHOICES ---- */
+  .choices {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .choice {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    background: rgba(255,255,255,0.02);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all var(--transition);
+    user-select: none;
+  }
+
+  .choice:hover:not(.locked) {
+    background: var(--surface-hover);
+    border-color: var(--primary);
+    transform: translateX(4px);
+  }
+
+  .choice.locked {
+    cursor: default;
+  }
+
+  .choice-letter {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    color: var(--text-dim);
+    width: 24px;
+    text-align: center;
+    font-size: 1.1rem;
+  }
+
+  .choice-text {
+    flex: 1;
+    font-size: 0.95rem;
+  }
+
+  /* État : Sélectionné normal (avant validation) */
+  .choice.selected {
+    border-color: var(--primary);
+    background: rgba(99, 102, 241, 0.1);
+  }
+  .choice.selected .choice-letter { color: var(--primary); }
+
+  /* État : Bonne réponse (après validation) */
+  .choice.is-correct {
+    border-color: var(--success);
+    background: var(--success-bg);
+    animation: popCorrect 0.4s ease;
+  }
+  .choice.is-correct .choice-letter, 
+  .choice.is-correct .choice-text { color: var(--success); font-weight: 600;}
+
+  /* État : Mauvaise réponse (choisie par l'utilisateur) */
+  .choice.is-wrong {
+    border-color: var(--danger);
+    background: var(--danger-bg);
+    animation: shakeWrong 0.4s ease;
+  }
+  .choice.is-wrong .choice-letter, 
+  .choice.is-wrong .choice-text { color: var(--danger); }
+
+  /* Icônes de validation */
+  .choice.is-correct::after {
+    content: '✓';
+    color: var(--success);
+    font-weight: 900;
+    font-size: 1.2rem;
+    margin-left: auto;
+  }
+
+  .choice.is-wrong::after {
+    content: '✗';
+    color: var(--danger);
+    font-weight: 900;
+    font-size: 1.2rem;
+    margin-left: auto;
+  }
+
+  /* ---- EXPLICATION ---- */
+  .explanation {
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(16, 185, 129, 0.08);
+    border-left: 4px solid var(--success);
+    border-radius: 4px 12px 12px 4px;
+    font-size: 0.9rem;
+    color: #d1fae5;
+    display: none;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .explanation.show {
+    display: block;
+  }
+
+  .explanation strong {
+    color: var(--success);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* ---- ANIMATIONS KEYFRAMES ---- */
+  @keyframes popCorrect {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes shakeWrong {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---- RESPONSIVE ---- */
+  @media (max-width: 600px) {
+    body { padding: 20px 12px; }
+    h1 { font-size: 1.6rem; }
+    .question-card { padding: 18px; }
+    .choice { padding: 12px 14px; }
+    .q-text { font-size: 0.95rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>QCM Éclair</h1>
+    <p class="subtitle">20 pièges classiques & scénarios React / Expo / Firebase</p>
+    
+    <div class="progress-container">
+      <span class="progress-text" id="scoreText">0 / 20</span>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+  </header>
+
+  <div id="quiz-container"></div>
+</div>
+
+<script>
+// --- DONNÉES DU QUIZ ---
+const QUIZ_DATA = [
+  {
+    q: "setN(n + 1); console.log(n); (n vaut 0). Que s'affiche-t-il au premier appui ?",
+    choices: ["1", "0", "undefined", "NaN"],
+    correct: 1,
+    exp: "console.log affiche la valeur actuelle de n lors du rendu (0). La mise à jour de l'état est asynchrone et déclenche un nouveau rendu plus tard."
+  },
+  {
+    q: "Que fait la fonction renvoyée par un useEffect ?",
+    choices: ["Elle s'exécute avant le premier rendu", "Elle remplace l'effet à chaque rendu", "Elle ne sert que pour les timers", "Elle s'exécute avant l'effet suivant et au démontage"],
+    correct: 3,
+    exp: "C'est la fonction de nettoyage (cleanup). React l'appelle pour annuler l'effet précédent avant d'exécuter le suivant, ou lorsque le composant est démonté."
+  },
+  {
+    q: "Un hook appelé après un return anticipé provoque :",
+    choices: ["« Rendered more hooks than during the previous render »", "rien", "une erreur TS", "une boucle infinie"],
+    correct: 0,
+    exp: "Les hooks doivent être appelés dans le même ordre à chaque rendu. Un return anticipé saute des hooks, ce qui casse l'ordre et déclenche cette erreur React."
+  },
+  {
+    q: "Tu supprimes un champ obligatoire d'un objet typé. Dans Expo Go :",
+    choices: ["écran rouge", "l'écran ne s'affiche plus", "l'écran s'affiche normalement, seule tsc signale l'erreur", "Metro refuse de démarrer"],
+    correct: 2,
+    exp: "TypeScript est effacé à l'exécution (type erasure). L'application continue de tourner, seule la vérification statique (tsc) râle."
+  },
+  {
+    q: "src/app/index.tsx et src/app/(tabs)/index.tsx existent tous les deux :",
+    choices: ["aucun problème, le dernier gagne", "l'alias @/ ne résout plus", "deux fichiers répondent à /, Expo Router ne sait pas lequel afficher", "les types de routes ne sont plus générés"],
+    correct: 2,
+    exp: "Les parenthèses (tabs) sont un groupe de routes ignoré dans l'URL. Les deux fichiers pointent donc vers la racine /, créant un conflit de routage."
+  },
+  {
+    q: "Ta base est déjà en version 1. Tu modifies le CREATE TABLE de la marche 0 pour ajouter une colonne. Résultat :",
+    choices: ["la colonne est ajoutée", "la table est recréée", "la marche 0 ne s'exécute plus : colonne absente, écriture en erreur", "migration automatique"],
+    correct: 2,
+    exp: "La marche 0 ne rejoue pas car la base est déjà en v1. La nouvelle colonne n'existe pas, et les requêtes qui l'utilisent échouent. Il faut créer une marche 1 avec ALTER TABLE."
+  },
+  {
+    q: "Dans withTransactionAsync, 2 INSERT réussissent, le 3e lève une erreur. Combien de lignes sont ajoutées ?",
+    choices: ["0 (ROLLBACK)", "2", "3", "1"],
+    correct: 0,
+    exp: "Une transaction est atomique. Si une instruction échoue, toute la transaction est annulée (ROLLBACK) et aucune ligne n'est conservée."
+  },
+  {
+    q: "L'utilisateur saisit « 12,5 ». Quelle conversion donne un montant faux sans aucune erreur ?",
+    choices: ["Number('12,5')", "Number('12.5')", "Number.isFinite('12,5')", "parseFloat('12,5')"],
+    correct: 3,
+    exp: "parseFloat('12,5') s'arrête à la virgule et renvoie 12 (silencieusement). Number('12,5') renvoie NaN (ce qui est une erreur visible)."
+  },
+  {
+    q: "SELECT SUM(amount) sur une catégorie sans dépense renvoie :",
+    choices: ["0", "NULL, d'où le ?? 0", "un tableau vide", "une erreur"],
+    correct: 1,
+    exp: "En SQL, SUM() sur un ensemble vide renvoie NULL. En JS, il faut utiliser l'opérateur ?? 0 pour afficher 0 à la place."
+  },
+  {
+    q: "fetch reçoit un 404 dans un try/catch :",
+    choices: ["catch s'exécute", "res vaut null", "pas d'exception, res.ok vaut false", "la Promise ne se résout jamais"],
+    correct: 2,
+    exp: "fetch ne rejette pas (ne lance pas d'exception) sur les erreurs HTTP 4xx ou 5xx. Il faut vérifier manuellement if (!res.ok) throw new Error()."
+  },
+  {
+    q: "staleTime 30 s, gcTime 5 min. L'utilisateur revient sur l'écran après 2 minutes :",
+    choices: ["cache affiché immédiatement, puis requête en arrière-plan", "chargement plein écran", "cache affiché sans aucune requête", "erreur"],
+    correct: 0,
+    exp: "Après 2 min, la donnée est stale (périmée) mais toujours en cache (gcTime 5min). TanStack Query affiche le cache et lance un refetch en arrière-plan."
+  },
+  {
+    q: "Une variable utilisée par queryFn n'est pas dans la queryKey :",
+    choices: ["erreur TS", "refetch automatique", "rien de grave", "deux requêtes différentes partagent la même entrée de cache"],
+    correct: 3,
+    exp: "La clé de requête définit l'identité du cache. Si une variable (ex: category) change mais n'est pas dans la clé, le cache ne le sait pas et renvoie les mauvaises données."
+  },
+  {
+    q: "invalidateQueries({ queryKey: ['products'] }) marque périmées :",
+    choices: ["seulement la clé exacte ['products']", "aussi ['product', '7']", "toutes les clés commençant par 'products'", "aucune"],
+    correct: 2,
+    exp: "Par défaut, TanStack Query utilise un match par préfixe. Toutes les clés commençant par 'products' (comme ['products', {id: 1}]) sont invalidées."
+  },
+  {
+    q: "getNextPageParam renvoie undefined quand :",
+    choices: ["la page reçue est vide", "il n'y a plus de page suivante", "la requête échoue", "c'est le premier appel"],
+    correct: 1,
+    exp: "Renvoie undefined (ou null) indique à useInfiniteQuery qu'il n'y a plus de pages à charger. isFetchingNextPage devient false."
+  },
+  {
+    q: "Pourquoi stocker le jeton dans SecureStore et dans un Context ?",
+    choices: ["SecureStore survit au redémarrage, le Context est lu par les hooks", "c'est redondant", "le Context chiffre le jeton", "SecureStore est plus rapide"],
+    correct: 0,
+    exp: "SecureStore (asynchrone) persiste le jeton en sécurité pour les redémarrages. Le Context (synchrone) permet à tous les composants React d'y accéder instantanément sans await."
+  },
+  {
+    q: "Un inconnu extrait l'apiKey Firebase du bundle. Il peut :",
+    choices: ["tout supprimer", "lire ton .env sur GitHub", "modifier tes règles", "seulement ce que tes règles autorisent"],
+    correct: 3,
+    exp: "L'apiKey Firebase est publique (ce n'est pas un secret). La sécurité repose à 100% sur les Règles de Sécurité Firestore et Storage."
+  },
+  {
+    q: "Pourquoi un état initializing dans l'AuthContext ?",
+    choices: ["pour une animation", "pour le logout", "la restauration de session est asynchrone : user vaut null au départ même si connecté", "pour Firestore"],
+    correct: 2,
+    exp: "Au lancement, Firebase lit la session de manière asynchrone. Pendant ce temps, user est null. Sans initializing, on afficherait l'écran de login par erreur."
+  },
+  {
+    q: "onSnapshot sans return unsubscribe dans le useEffect :",
+    choices: ["l'ancien écouteur est remplacé", "les écouteurs s'accumulent et consomment le quota de lectures", "rien", "erreur immédiate"],
+    correct: 1,
+    exp: "Sans nettoyage, chaque Fast Refresh ajoute un nouvel écouteur. Tous restent actifs, ce qui multiplie les lectures Firestore et coûte cher."
+  },
+  {
+    q: "Une écriture Firestore est refusée par les règles :",
+    choices: ["la tâche apparaît un instant puis disparaît, Promise rejetée (permission-denied)", "elle n'est jamais visible", "elle reste affichée", "l'app plante"],
+    correct: 0,
+    exp: "Firestore fait une mise à jour optimiste locale. En cas de refus serveur, le document disparaît du cache local et la Promise échoue avec permission-denied."
+  },
+  {
+    q: "Règle : allow update: if request.auth.uid == resource.data.ownerId;. Alice change le ownerId de sa propre tâche vers l'uid de Bob :",
+    choices: ["refusé", "refusé car ownerId est protégé par défaut", "refusé car Alice n'est plus propriétaire", "accepté : la règle ne limite pas les champs, il faut hasOnly(['done'])"],
+    correct: 3,
+    exp: "La règle vérifie qui fait l'action sur la ressource actuelle. Elle ne limite pas les champs modifiés. Alice peut donc s'auto-exclure. Il faut ajouter request.resource.data.ownerId == resource.data.ownerId."
+  }
+];
+
+// --- LOGIQUE ---
+let score = 0;
+const container = document.getElementById('quiz-container');
+const scoreText = document.getElementById('scoreText');
+const progressFill = document.getElementById('progressFill');
+
+function initQuiz() {
+  let html = '';
+  
+  QUIZ_DATA.forEach((item, index) => {
+    html += `
+      <div class="question-card" id="card-${index}">
+        <div class="q-header">
+          <div class="q-num">${index + 1}</div>
+          <div class="q-text">${item.q}</div>
+        </div>
+        <div class="choices" id="choices-${index}">
+    `;
+
+    item.choices.forEach((choice, cIdx) => {
+      html += `
+        <div class="choice" 
+             id="choice-${index}-${cIdx}" 
+             onclick="handleAnswer(${index}, ${cIdx})">
+          <div class="choice-letter">${String.fromCharCode(65 + cIdx)}</div>
+          <div class="choice-text">${choice}</div>
+        </div>
+      `;
+    });
+
+    html += `
+        </div>
+        <div class="explanation" id="exp-${index}">
+          <strong>💡 Explication :</strong>
+          ${item.exp}
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html;
+}
+
+function handleAnswer(qIndex, cIndex) {
+  const card = document.getElementById(`card-${qIndex}`);
+  const choicesContainer = document.getElementById(`choices-${qIndex}`);
+  const choices = choicesContainer.querySelectorAll('.choice');
+  const exp = document.getElementById(`exp-${qIndex}`);
+  const data = QUIZ_DATA[qIndex];
+
+  // Empêcher de recliquer si déjà répondu
+  if (card.classList.contains('answered')) return;
+  card.classList.add('answered');
+
+  // Verrouiller tous les choix
+  choices.forEach(c => c.classList.add('locked'));
+
+  const isCorrect = (cIndex === data.correct);
+
+  // Appliquer les états visuels
+  if (isCorrect) {
+    // Bonne réponse
+    card.classList.add('correct');
+    choices[cIndex].classList.add('is-correct');
+    score++;
+  } else {
+    // Mauvaise réponse
+    card.classList.add('wrong');
+    choices[cIndex].classList.add('is-wrong');
+    
+    // Montrer aussi la bonne réponse en vert
+    choices[data.correct].classList.add('is-correct');
+  }
+
+  // Afficher l'explication
+  exp.classList.add('show');
+
+  // Mettre à jour le score et la barre de progression
+  scoreText.textContent = `${score} / ${QUIZ_DATA.length}`;
+  const percent = (score / QUIZ_DATA.length) * 100;
+  progressFill.style.width = `${percent}%`;
+}
+
+// Lancer au chargement
+window.addEventListener('DOMContentLoaded', initQuiz);
+</script>
+</body>
+</html>
